@@ -11,7 +11,7 @@ secrets/
 *.pem
 *.key
 
-# ── OpenTofu / Terraform ────────────────
+# ── OpenTofu / ────────────────
 .terraform/
 *.tfstate
 *.tfstate.*
@@ -19,6 +19,8 @@ secrets/
 crash.log
 override.tf
 override.tf.json
+tfplan
+*.tfplan
 
 # ── Build output ────────────────────────
 dist/
