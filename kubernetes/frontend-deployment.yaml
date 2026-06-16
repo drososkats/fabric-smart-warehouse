@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fabric-frontend
+  labels:                               
+    app: fabric-frontend
+    tier: frontend
+    env: development
 spec:
   replicas: 1
   selector:
@@ -11,11 +15,18 @@ spec:
     metadata:
       labels:
         app: fabric-frontend
+        tier: frontend
+        env: development
     spec:
       containers:
       - name: frontend
         image: katsdros/fabric-frontend:v1  # my registry docker
         imagePullPolicy: Always
+        securityContext:             
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 80
 ---
