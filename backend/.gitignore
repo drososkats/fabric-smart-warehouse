@@ -10,3 +10,9 @@ npm-debug.log*
 
 # Ignore OS specific files
 .DS_Store
+
+# Runtime user uploads (not source code)
+uploads/invoices/*
+uploads/product-images/*
+!uploads/invoices/.gitkeep
+!uploads/product-images/.gitkeep
