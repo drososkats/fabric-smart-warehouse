@@ -25,7 +25,9 @@ metadata:
 spec:
   selector:
     app: nodered
+  type: NodePort
   ports:
     - protocol: TCP
       port: 1880
       targetPort: 1880
+      nodePort: 31880

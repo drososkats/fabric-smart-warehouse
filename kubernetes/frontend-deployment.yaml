@@ -22,11 +22,6 @@ spec:
       - name: frontend
         image: katsdros/fabric-frontend:v1  # my registry docker
         imagePullPolicy: Always
-        securityContext:             
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
         ports:
         - containerPort: 80
 ---

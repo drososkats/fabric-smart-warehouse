@@ -50,7 +50,7 @@ spec:
 
         # external access
         - name: VM_IP
-          value: "192.168.1.5"
+          value: "20.188.60.198"
 
         # database
         - name: MONGO_URI
