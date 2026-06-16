@@ -1,0 +1,32 @@
+# ── Node.js ─────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ── Environment & secrets ───────────────
+.env
+.env.*
+*.local
+secrets/
+*.pem
+*.key
+
+# ── OpenTofu / Terraform ────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+override.tf
+override.tf.json
+
+# ── Build output ────────────────────────
+dist/
+build/
+*.log
+
+# ── OS / Editor ─────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
