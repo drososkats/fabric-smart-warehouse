@@ -5,8 +5,8 @@ This folder is the documentation hub for the **Fabric Smart Warehouse** project.
 ## Links
 
 - **Documentation repository (LaTeX sources):** https://github.com/drososkats/fabric-smart-warehouse-docs
-- **Report (PDF):** https://github.com/drososkats/fabric-smart-warehouse-docs/blob/main/report/report.pdf
-- **Presentation (PDF):** https://github.com/drososkats/fabric-smart-warehouse-docs/blob/main/presentation/presentation.pdf
+- **Report (PDF):** https://github.com/drososkats/fabric-smart-warehouse-docs/project//report/
+- **Presentation (PDF):** https://github.com/drososkats/fabric-smart-warehouse-docs/project/presentation/
 - **Main project (code):** https://github.com/drososkats/fabric-smart-warehouse
 
 ## Contents of this folder
