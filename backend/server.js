@@ -11,7 +11,7 @@
   const nodemailer = require("nodemailer");
   require("dotenv").config();
   // idempotency tracking - remembers which requests have already been processed
-const processedIdempotencyKeys = new Set();
+  const processedIdempotencyKeys = new Set();
 
   const { connectRabbitMQ, initMinIO, minioClient } = require('./cloud-services');
   const { MONGO_URI } = require("./cloud-services");
@@ -36,10 +36,25 @@ const processedIdempotencyKeys = new Set();
   app.set("view engine", "ejs");
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-  // --- database connection ---
-  mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ Mongodb connected"))
-    .catch(err => console.error("❌ Database error:", err));
+ // database connection (with retry pattern) 
+const connectWithRetry = async (retries = 3, delayMs = 2000) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await mongoose.connect(MONGO_URI);
+      console.log("✅ Mongodb connected");
+      return;
+    } catch (err) {
+      console.error(`❌ Mongodb connection attempt ${attempt}/${retries} failed:`, err.message);
+      if (attempt < retries) {
+        console.log(`⏳ Retrying in ${delayMs / 1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      } else {
+        console.error("❌ All retry attempts exhausted. Could not connect to Mongodb.");
+      }
+    }
+  }
+};
+connectWithRetry();
 
   // --- file system & storage setup ---
   const dirs = ["uploads/product-images", "uploads/invoices"];
@@ -131,7 +146,7 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
     if (idempotencyKey) {
       processedIdempotencyKeys.add(idempotencyKey);
     }
-    
+
     const bucket = process.env.MINIO_BUCKET;
     let imgUrl = "";
     let invUrl = "";
