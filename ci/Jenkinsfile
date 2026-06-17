@@ -10,7 +10,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/drososkats/fabric-smart-warehouse.git'
+                git branch: 'main',
+                url: 'https://github.com/drososkats/fabric-smart-warehouse.git',
+                credentialsId: 'github-credentials'
             }
         }
 
