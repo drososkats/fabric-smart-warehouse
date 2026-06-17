@@ -9,6 +9,9 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const [role, setRole] = useState("user");
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  // idempotency Key - unique random string key
+  const generateKey = () => `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+  const [idempotencyKey, setIdempotencyKey] = useState(generateKey);
   
   // form state
   const [name, setName] = useState("");
@@ -55,6 +58,8 @@ const AddProduct = () => {
     }
 
     const formData = new FormData();
+    // formData has the idempotency key
+    formData.append("idempotencyKey", idempotencyKey);
     formData.append("name", name);
     formData.append("category", category);
     formData.append("price", price);
@@ -66,6 +71,8 @@ const AddProduct = () => {
       const res = await fetch(`${API_URL}/api/products`, { method: "POST", body: formData });
       if (res.ok) {
         toast.success("Product added successfully!");
+        // after submit new product - generate new idempotency key
+        setIdempotencyKey(generateKey());
         navigate("/inventory");
       } else {
         const data = await res.json();

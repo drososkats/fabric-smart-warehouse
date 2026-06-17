@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: katsdros/fabric-frontend:v2  # my registry docker
+        image: katsdros/fabric-frontend:v4  # my registry docker
         imagePullPolicy: Always
         ports:
         - containerPort: 80

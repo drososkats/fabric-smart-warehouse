@@ -10,6 +10,8 @@
   const jwt = require("jsonwebtoken");
   const nodemailer = require("nodemailer");
   require("dotenv").config();
+  // idempotency tracking - remembers which requests have already been processed
+const processedIdempotencyKeys = new Set();
 
   const { connectRabbitMQ, initMinIO, minioClient } = require('./cloud-services');
   const { MONGO_URI } = require("./cloud-services");
@@ -120,22 +122,32 @@ app.post("/api/send-email", async (req, res) => {
 
 app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]), async (req, res) => {
   try {
+    // idempotency check - reject duplicate submissions with the same key
+    const idempotencyKey = req.body.idempotencyKey;
+    if (idempotencyKey && processedIdempotencyKeys.has(idempotencyKey)) {
+      console.log(`⚠️  Duplicate request blocked (idempotency key: ${idempotencyKey})`);
+      return res.status(409).json({ message: "Duplicate request - product already submitted" });
+    }
+    if (idempotencyKey) {
+      processedIdempotencyKeys.add(idempotencyKey);
+    }
+    
     const bucket = process.env.MINIO_BUCKET;
     let imgUrl = "";
     let invUrl = "";
 
-    // Ανέβασμα Εικόνας στο MinIO
+    // Upload image to MinIO
     if (req.files["image"]) {
       const file = req.files["image"][0];
       const fileName = `img-${Date.now()}-${file.originalname}`;
       const VM_IP = process.env.VM_IP || "192.168.1.5";
-      // Στέλνουμε το αρχείο από το path που το έσωσε το multer στο MinIO
+      // send the file from the path where multer saved to MinIO
       await minioClient.fPutObject(bucket, fileName, file.path);
       imgUrl = `http://${VM_IP}:9000/${bucket}/${fileName}`;
-      fs.unlinkSync(file.path); // Καθαρίζουμε το τοπικό αρχείο
+      fs.unlinkSync(file.path); // clean local file
     }
 
-    // Ανέβασμα Τιμολογίου (Invoice) στο MinIO
+    // upload invoice to MinIO
     if (req.files["invoice"]) {
       const file = req.files["invoice"][0];
       const fileName = `inv-${Date.now()}-${file.originalname}`;
@@ -144,10 +156,10 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
       fs.unlinkSync(file.path);
     }
 
-    // Αποθήκευση στη MongoDB με τα νέα Cloud URLs
+    // save in MongoDB with new Cloud URLs
     const saved = await new Product({ ...req.body, image: imgUrl, invoice: invUrl }).save();
     
-    // Ειδοποίηση στον RabbitMQ
+    // notification in RabbitMQ
     const rabbitChannel = await connectRabbitMQ();
     if (rabbitChannel) {
         const msg = JSON.stringify({ event: "NEW_PRODUCT", name: saved.name });
@@ -219,7 +231,7 @@ const startServer = async () => {
     });
   } catch (err) {
     console.error("❌ Failed to start the Cloud services:", err);
-    process.exit(1); // Κλείνει το app αν αποτύχει η σύνδεση
+    process.exit(1); // close app if the connection is failed
   }
 };
 
