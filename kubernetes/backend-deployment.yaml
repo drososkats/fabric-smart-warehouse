@@ -41,6 +41,13 @@ spec:
               - ALL
         ports:
         - containerPort: 5000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
         env:
         # internal settings
         - name: PORT
