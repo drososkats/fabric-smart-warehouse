@@ -148,6 +148,8 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
     }
 
     const bucket = process.env.MINIO_BUCKET;
+    //vm ip , and fallback in future deployments
+    const VM_IP = process.env.VM_IP || "192.168.1.5";
     let imgUrl = "";
     let invUrl = "";
 
@@ -155,7 +157,6 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
     if (req.files["image"]) {
       const file = req.files["image"][0];
       const fileName = `img-${Date.now()}-${file.originalname}`;
-      const VM_IP = process.env.VM_IP || "192.168.1.5";
       // send the file from the path where multer saved to MinIO
       await minioClient.fPutObject(bucket, fileName, file.path);
       imgUrl = `http://${VM_IP}:9000/${bucket}/${fileName}`;
@@ -171,13 +172,18 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
       fs.unlinkSync(file.path);
     }
 
-    // save in MongoDB with new Cloud URLs
+    // save in MongoDB with new Cloud URLs - Claim Check pattern
     const saved = await new Product({ ...req.body, image: imgUrl, invoice: invUrl }).save();
     
-    // notification in RabbitMQ
+    // notification in RabbitMQ - Claim Check pattern
     const rabbitChannel = await connectRabbitMQ();
     if (rabbitChannel) {
-        const msg = JSON.stringify({ event: "NEW_PRODUCT", name: saved.name });
+        const msg = JSON.stringify({
+          event: "NEW_PRODUCT",
+          productId: saved._id,
+          imageUrl: saved.image,
+          name: saved.name
+        });
         rabbitChannel.sendToQueue('system_logs', Buffer.from(msg));
     }
 
