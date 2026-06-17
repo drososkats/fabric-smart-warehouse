@@ -1,3 +1,18 @@
+const fs = require("fs");
+
+let vaultSecrets = {};
+try {
+  const raw = fs.readFileSync("/vault/secrets/config", "utf8");
+  vaultSecrets = JSON.parse(raw);
+  console.log("✅ Secrets loaded from Vault");
+} catch (err) {
+  console.log("ℹ️  Vault secrets not found, falling back to environment variables");
+}
+
+const MINIO_ACCESS_KEY = vaultSecrets.minio_access_key || process.env.MINIO_ACCESS_KEY || "minioadmin";
+const MINIO_SECRET_KEY = vaultSecrets.minio_secret_key || process.env.MINIO_SECRET_KEY || "minioadmin";
+const MONGO_URI = vaultSecrets.mongo_uri || process.env.MONGO_URI;
+
 const amqp = require("amqplib");
 const Minio = require("minio");
 require("dotenv").config();
@@ -9,8 +24,8 @@ const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT || "localhost",
   port: parseInt(process.env.MINIO_PORT) || 9000,
   useSSL: false,
-  accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
-  secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
+  accessKey: MINIO_ACCESS_KEY,
+  secretKey: MINIO_SECRET_KEY,
 });
 
 //init MinIO bucket
@@ -60,4 +75,4 @@ const connectRabbitMQ = async () => {
   }
 };
 
-module.exports = { connectRabbitMQ, initMinIO, minioClient };
+module.exports = { connectRabbitMQ, initMinIO, minioClient, MONGO_URI };

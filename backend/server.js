@@ -12,6 +12,7 @@
   require("dotenv").config();
 
   const { connectRabbitMQ, initMinIO, minioClient } = require('./cloud-services');
+  const { MONGO_URI } = require("./cloud-services");
 
   //res - response (what return) | req - request (what is coming)
   // models & routes imports
@@ -34,7 +35,7 @@
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
   // --- database connection ---
-  mongoose.connect(process.env.MONGO_URI)
+  mongoose.connect(MONGO_URI)
     .then(() => console.log("✅ Mongodb connected"))
     .catch(err => console.error("❌ Database error:", err));
 
