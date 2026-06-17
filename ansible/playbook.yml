@@ -171,3 +171,24 @@
       become_user: azureuser
       register: jenkins_install_result
       changed_when: "'upgraded' in jenkins_install_result.stdout or 'installed' in jenkins_install_result.stdout"
+
+    - name: Add ArgoCD Helm repository
+      command: microk8s helm3 repo add argo https://argoproj.github.io/argo-helm
+      become_user: azureuser
+      register: argo_repo_result
+      changed_when: "'already exists' not in argo_repo_result.stderr"
+      failed_when: false
+
+    - name: Update Helm repositories
+      command: microk8s helm3 repo update
+      become_user: azureuser
+
+    - name: Install or upgrade ArgoCD via Helm
+      command: >
+        microk8s helm3 upgrade --install argocd argo/argo-cd
+        --set "server.service.type=NodePort"
+        --set "server.service.nodePortHttp=30880"
+        --set "configs.params.server\.insecure=true"
+      become_user: azureuser
+      register: argocd_install_result
+      changed_when: "'upgraded' in argocd_install_result.stdout or 'installed' in argocd_install_result.stdout"
