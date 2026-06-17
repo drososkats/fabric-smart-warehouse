@@ -94,7 +94,10 @@
     - name: Configure Kubernetes auth in Vault
       shell: >
         microk8s kubectl exec vault-0 -- sh -c
-        'vault write auth/kubernetes/config kubernetes_host="https://$KUBERNETES_SERVICE_HOST:443"'
+        'vault write auth/kubernetes/config
+        kubernetes_host="https://$KUBERNETES_SERVICE_HOST:443"
+        token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        kubernetes_ca_cert="@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"'
       become_user: azureuser
       changed_when: true
 
@@ -146,3 +149,25 @@
       become_user: azureuser
       register: prom_install_result
       changed_when: "'upgraded' in prom_install_result.stdout or 'installed' in prom_install_result.stdout"
+
+    - name: Add Jenkins Helm repository
+      command: microk8s helm3 repo add jenkins https://charts.jenkins.io
+      become_user: azureuser
+      register: jenkins_repo_result
+      changed_when: "'already exists' not in jenkins_repo_result.stderr"
+      failed_when: false
+
+    - name: Update Helm repositories
+      command: microk8s helm3 repo update
+      become_user: azureuser
+
+    - name: Install or upgrade Jenkins via Helm
+      command: >
+        microk8s helm3 upgrade --install jenkins jenkins/jenkins
+        --set "controller.serviceType=NodePort"
+        --set "controller.nodePort=30808"
+        --set "controller.admin.password=admin123"
+        --set "controller.sidecars.configAutoReload.enabled=false"
+      become_user: azureuser
+      register: jenkins_install_result
+      changed_when: "'upgraded' in jenkins_install_result.stdout or 'installed' in jenkins_install_result.stdout"
