@@ -1,0 +1,5 @@
+---
+jenkins_user: azureuser
+jenkins_release_name: jenkins
+jenkins_nodeport: 30808
+jenkins_admin_password: admin123

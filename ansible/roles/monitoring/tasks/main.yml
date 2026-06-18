@@ -1,0 +1,32 @@
+- name: Enable metrics-server addon
+  command: microk8s enable metrics-server
+  become_user: "{{ monitoring_user }}"
+  register: metrics_result
+  changed_when: "'already enabled' not in metrics_result.stdout"
+
+- name: Add Prometheus community Helm repository
+  command: microk8s helm3 repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  become_user: "{{ monitoring_user }}"
+  register: prom_repo_result
+  changed_when: "'already exists' not in prom_repo_result.stderr"
+  failed_when: false
+
+- name: Update Helm repositories
+  command: microk8s helm3 repo update
+  become_user: "{{ monitoring_user }}"
+
+- name: Install or upgrade kube-prometheus-stack (Prometheus + Grafana)
+  command: >
+    microk8s helm3 upgrade --install {{ monitoring_release_name }} prometheus-community/kube-prometheus-stack
+    --set "grafana.service.type=NodePort"
+    --set "grafana.service.nodePort={{ monitoring_grafana_nodeport }}"
+    --set "prometheus.service.type=NodePort"
+    --set "prometheus.service.nodePort={{ monitoring_prometheus_nodeport }}"
+    --set "grafana.adminPassword={{ monitoring_grafana_admin_password }}"
+    --set "grafana.sidecar.dashboards.enabled=false"
+    --set "grafana.sidecar.datasources.enabled=false"
+    --set "grafana.persistence.enabled={{ monitoring_grafana_persistence_enabled }}"
+    --set "grafana.persistence.size={{ monitoring_grafana_persistence_size }}"
+  become_user: "{{ monitoring_user }}"
+  register: prom_install_result
+  changed_when: "'upgraded' in prom_install_result.stdout or 'installed' in prom_install_result.stdout"

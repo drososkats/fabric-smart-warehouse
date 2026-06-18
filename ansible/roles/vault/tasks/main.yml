@@ -1,0 +1,70 @@
+- name: Add HashiCorp Helm repository
+  command: microk8s helm3 repo add hashicorp https://helm.releases.hashicorp.com
+  become_user: "{{ vault_user }}"
+  register: helm_repo_result
+  changed_when: "'already exists' not in helm_repo_result.stderr"
+  failed_when: false
+
+- name: Update Helm repositories
+  command: microk8s helm3 repo update
+  become_user: "{{ vault_user }}"
+
+- name: Install Vault via Helm (dev mode, exposed as NodePort)
+  command: >
+    microk8s helm3 upgrade --install vault hashicorp/vault
+    --set "server.dev.enabled=true"
+    --set "server.service.type=NodePort"
+    --set "server.service.nodePort={{ vault_nodeport }}"
+  become_user: "{{ vault_user }}"
+  register: vault_install_result
+  changed_when: "'upgraded' in vault_install_result.stdout or 'installed' in vault_install_result.stdout"
+
+- name: Wait for Vault pod to be ready
+  command: microk8s kubectl wait --for=condition=ready pod/vault-0 --timeout=120s
+  become_user: "{{ vault_user }}"
+  changed_when: false
+
+- name: Store application secrets in Vault
+  command: >
+    microk8s kubectl exec vault-0 -- vault kv put {{ vault_secret_path }}
+    mongo_uri="{{ vault_mongo_uri }}"
+    minio_access_key="{{ vault_minio_access_key }}"
+    minio_secret_key="{{ vault_minio_secret_key }}"
+  environment:
+    VAULT_ADDR: "{{ vault_addr }}"
+    VAULT_TOKEN: "{{ vault_root_token }}"
+  become_user: "{{ vault_user }}"
+  changed_when: true
+
+- name: Enable Kubernetes auth method in Vault
+  command: microk8s kubectl exec vault-0 -- vault auth enable kubernetes
+  become_user: "{{ vault_user }}"
+  register: auth_enable_result
+  failed_when: false
+  changed_when: "'Success' in auth_enable_result.stdout"
+
+- name: Configure Kubernetes auth in Vault
+  shell: >
+    microk8s kubectl exec vault-0 -- sh -c
+    'vault write auth/kubernetes/config
+    kubernetes_host="https://$KUBERNETES_SERVICE_HOST:443"
+    token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+    kubernetes_ca_cert="@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"'
+  become_user: "{{ vault_user }}"
+  changed_when: true
+
+- name: Write Vault policy for backend
+  shell: |
+    echo 'path "{{ vault_policy_path }}" { capabilities = ["read"] }' | microk8s kubectl exec -i vault-0 -- vault policy write {{ vault_policy_name }} -
+  become_user: "{{ vault_user }}"
+  changed_when: true
+
+- name: Create Vault Kubernetes role for backend
+  command: >
+    microk8s kubectl exec vault-0 -- vault write auth/kubernetes/role/{{ vault_k8s_role_name }}
+    bound_service_account_names={{ vault_bound_service_account_name }}
+    bound_service_account_namespaces={{ vault_bound_service_account_namespace }}
+    policies={{ vault_policy_name }}
+    ttl={{ vault_role_ttl }}
+  become_user: "{{ vault_user }}"
+  changed_when: true

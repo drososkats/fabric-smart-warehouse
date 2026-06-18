@@ -1,0 +1,41 @@
+- name: Update apt package cache
+  apt:
+    update_cache: yes
+    cache_valid_time: "{{ base_setup_apt_cache_valid_time }}"
+
+- name: Install base dependencies
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - apt-transport-https
+      - software-properties-common
+    state: present
+
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Add user to the docker group
+  user:
+    name: "{{ base_setup_user }}"
+    groups: docker
+    append: yes
+
+- name: Install MicroK8s (via snap)
+  snap:
+    name: microk8s
+    classic: yes
+    state: present
+
+- name: Add user to the microk8s group
+  user:
+    name: "{{ base_setup_user }}"
+    groups: microk8s
+    append: yes
+
+- name: Enable core MicroK8s addons
+  command: "microk8s enable {{ base_setup_microk8s_addons }}"
+  register: addon_result
+  changed_when: "'already enabled' not in addon_result.stdout"

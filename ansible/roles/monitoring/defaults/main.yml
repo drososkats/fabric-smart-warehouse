@@ -1,0 +1,8 @@
+---
+monitoring_user: azureuser
+monitoring_release_name: monitoring
+monitoring_grafana_nodeport: 30300
+monitoring_prometheus_nodeport: 30909
+monitoring_grafana_admin_password: admin123
+monitoring_grafana_persistence_enabled: true
+monitoring_grafana_persistence_size: 1Gi

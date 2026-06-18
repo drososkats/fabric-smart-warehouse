@@ -1,0 +1,21 @@
+- name: Add Jenkins Helm repository
+  command: microk8s helm3 repo add jenkins https://charts.jenkins.io
+  become_user: "{{ jenkins_user }}"
+  register: jenkins_repo_result
+  changed_when: "'already exists' not in jenkins_repo_result.stderr"
+  failed_when: false
+
+- name: Update Helm repositories
+  command: microk8s helm3 repo update
+  become_user: "{{ jenkins_user }}"
+
+- name: Install or upgrade Jenkins via Helm
+  command: >
+    microk8s helm3 upgrade --install {{ jenkins_release_name }} jenkins/jenkins
+    --set "controller.serviceType=NodePort"
+    --set "controller.nodePort={{ jenkins_nodeport }}"
+    --set "controller.admin.password={{ jenkins_admin_password }}"
+    --set "controller.sidecars.configAutoReload.enabled=false"
+  become_user: "{{ jenkins_user }}"
+  register: jenkins_install_result
+  changed_when: "'upgraded' in jenkins_install_result.stdout or 'installed' in jenkins_install_result.stdout"
