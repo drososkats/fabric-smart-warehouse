@@ -36,6 +36,23 @@ pipeline {
                 credentialsId: 'github-credentials'
             }
         }
+    
+    stage('Unit Tests') {
+            steps {
+                dir('backend') {
+                    sh "docker run --rm -v \$(pwd):/app -w /app node:20-alpine sh -c 'npm install && npm test'"
+                }
+            }
+        }
+
+    stage('Security Audit') {
+            steps {
+                dir('backend') {
+                    sh "docker run --rm -v \$(pwd):/app -w /app node:20-alpine sh -c 'npm install && npm audit --audit-level=critical'"
+                }
+            }
+        }
+    
 
         stage('Build Docker Image') {
             steps {
