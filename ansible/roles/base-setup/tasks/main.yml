@@ -46,11 +46,12 @@
     state: directory
     mode: '0755'
 
-- name: Download k6 GPG key
-  get_url:
-    url: "{{ base_setup_k6_key_url }}"
-    dest: /usr/share/keyrings/k6-archive-keyring.gpg
-    mode: '0644'
+- name: Download and dearmor k6 GPG key
+  shell: |
+    curl -fsSL https://dl.k6.io/key.gpg | \
+    gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/k6-archive-keyring.gpg
 
 - name: Add k6 APT repository
   apt_repository:

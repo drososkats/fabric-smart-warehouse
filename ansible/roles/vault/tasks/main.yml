@@ -9,10 +9,12 @@
   command: microk8s helm3 repo update
   become_user: "{{ vault_user }}"
 
-- name: Install Vault via Helm (dev mode, exposed as NodePort)
+- name: Install Vault via Helm (persistent storage, exposed as NodePort)
   command: >
     microk8s helm3 upgrade --install vault hashicorp/vault
-    --set "server.dev.enabled=true"
+    --set "server.dev.enabled=false"
+    --set "server.dataStorage.enabled=true"
+    --set "server.dataStorage.size=1Gi"
     --set "server.service.type=NodePort"
     --set "server.service.nodePort={{ vault_nodeport }}"
   become_user: "{{ vault_user }}"
@@ -23,6 +25,13 @@
   command: microk8s kubectl wait --for=condition=ready pod/vault-0 --timeout=120s
   become_user: "{{ vault_user }}"
   changed_when: false
+
+- name: Enable KV-v2 secrets engine
+  command: microk8s kubectl exec vault-0 -- vault secrets enable -path=secret kv-v2
+  become_user: "{{ vault_user }}"
+  register: kv_enable_result
+  failed_when: false
+  changed_when: "'Success' in kv_enable_result.stdout"
 
 - name: Store application secrets in Vault
   command: >

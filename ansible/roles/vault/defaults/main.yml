@@ -2,10 +2,10 @@
 vault_user: azureuser
 vault_nodeport: 30820
 vault_addr: "http://127.0.0.1:8200"
-vault_root_token: "root"
+vault_root_token: "hvs.NLP31XCXhVW5jTVc64dDyHgS"
 vault_secret_path: "secret/fabric"
 vault_policy_path: "secret/data/fabric"
-vault_policy_name: "fabric-policy"
+vault_policy_name: "fabric-backend"
 vault_k8s_role_name: "fabric-backend"
 vault_bound_service_account_name: "default"
 vault_bound_service_account_namespace: "default"

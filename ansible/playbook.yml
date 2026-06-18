@@ -2,10 +2,11 @@
 - name: Configure Fabric VM (base environment)
   hosts: local
   become: true
-
+  vars_files:
+    - secrets.yml
   roles:
     - base-setup
     - vault
     - monitoring
     - jenkins
-    - argocd
+    - argocda
