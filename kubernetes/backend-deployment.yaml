@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: katsdros/fabric-backend:v8
+        image: katsdros/fabric-backend:v14
         imagePullPolicy: Always
         securityContext:             
           allowPrivilegeEscalation: false
