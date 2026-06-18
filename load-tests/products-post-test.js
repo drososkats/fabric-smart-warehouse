@@ -20,15 +20,15 @@ export const options = {
 };
 
 export default function () {
-  // Παράγουμε ένα 100% μοναδικό ID για αυτή την εκτέλεση
+  // generate 100% unique ID 
   const uniqueId = uuidv4();
 
   const data = {
-    name: `TestProduct-${uniqueId}`, // Πάντα μοναδικό όνομα
+    name: `TestProduct-${uniqueId}`, // unique name
     price: '99.99',
     stock: '10',
     category: 'Bag',
-    idempotencyKey: uniqueId,        // Πάντα μοναδικό key
+    idempotencyKey: uniqueId,        // unique key
     image: http.file('dummy image content', 'test-image.jpg', 'image/jpeg'),
   };
 
