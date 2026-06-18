@@ -10,9 +10,7 @@
   const jwt = require("jsonwebtoken");
   const nodemailer = require("nodemailer");
   require("dotenv").config();
-  // idempotency tracking - remembers which requests have already been processed
-  const processedIdempotencyKeys = new Set();
-
+  const { checkIdempotency } = require('./utils/idempotency');
   const { connectRabbitMQ, initMinIO, minioClient } = require('./cloud-services');
   const { MONGO_URI } = require("./cloud-services");
 
@@ -139,12 +137,10 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
   try {
     // idempotency check - reject duplicate submissions with the same key
     const idempotencyKey = req.body.idempotencyKey;
-    if (idempotencyKey && processedIdempotencyKeys.has(idempotencyKey)) {
+    const { duplicate } = checkIdempotency(idempotencyKey);
+    if (duplicate) {
       console.log(`⚠️  Duplicate request blocked (idempotency key: ${idempotencyKey})`);
       return res.status(409).json({ message: "Duplicate request - product already submitted" });
-    }
-    if (idempotencyKey) {
-      processedIdempotencyKeys.add(idempotencyKey);
     }
 
     const bucket = process.env.MINIO_BUCKET;
