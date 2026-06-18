@@ -1,3 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nodered-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,6 +28,13 @@ spec:
         image: gkousiou/nodelab:latest
         ports:
         - containerPort: 1880
+        volumeMounts:
+        - name: nodered-storage
+          mountPath: /data
+      volumes:
+      - name: nodered-storage
+        persistentVolumeClaim:
+          claimName: nodered-pvc
 ---
 apiVersion: v1
 kind: Service
