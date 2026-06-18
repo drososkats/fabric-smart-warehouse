@@ -39,3 +39,27 @@
   command: "microk8s enable {{ base_setup_microk8s_addons }}"
   register: addon_result
   changed_when: "'already enabled' not in addon_result.stdout"
+
+- name: Ensure keyrings directory exists for k6
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download k6 GPG key
+  get_url:
+    url: "{{ base_setup_k6_key_url }}"
+    dest: /usr/share/keyrings/k6-archive-keyring.gpg
+    mode: '0644'
+
+- name: Add k6 APT repository
+  apt_repository:
+    repo: "{{ base_setup_k6_repo_url }}"
+    state: present
+    filename: k6
+
+- name: Install k6
+  apt:
+    name: k6
+    state: present
+    update_cache: yes

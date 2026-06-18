@@ -2,3 +2,7 @@
 base_setup_user: azureuser
 base_setup_apt_cache_valid_time: 3600
 base_setup_microk8s_addons: "dns storage"
+
+# k6 Load Testing Tool Variables
+base_setup_k6_key_url: "https://dl.k6.io/key.gpg"
+base_setup_k6_repo_url: "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main"
