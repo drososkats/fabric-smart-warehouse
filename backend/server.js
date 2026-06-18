@@ -182,7 +182,8 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
           event: "NEW_PRODUCT",
           productId: saved._id,
           imageUrl: saved.image,
-          name: saved.name
+          name: saved.name,
+          stock: saved.stock
         });
         rabbitChannel.sendToQueue('system_logs', Buffer.from(msg));
     }
