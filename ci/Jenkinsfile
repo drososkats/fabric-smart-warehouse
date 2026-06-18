@@ -13,6 +13,10 @@ pipeline {
                     volumeMounts:
                     - name: docker-sock
                       mountPath: /var/run/docker.sock
+                    - name: node
+                    image: node:20-bullseye-slim
+                      command: ['cat']
+                      tty: true
                   volumes:
                   - name: docker-sock
                     hostPath:
