@@ -13,7 +13,6 @@
   const { checkIdempotency } = require('./utils/idempotency');
   const { connectRabbitMQ, initMinIO, minioClient } = require('./cloud-services');
   const { MONGO_URI } = require("./cloud-services");
-
   //res - response (what return) | req - request (what is coming)
   // models & routes imports
   const authRoute = require("./routes/auth");
@@ -21,6 +20,7 @@
   const User = require("./models/User");
   const Product = require("./models/Product");
   const Notification = require("./models/Notification");
+  const { uploadAndGetClaimCheck } = require('./utils/claimCheck');
 
   //create an express object for your app (instance) - (manager of the server)
   const app = express();
@@ -137,23 +137,12 @@ app.post("/api/products", upload.fields([{ name: "image" }, { name: "invoice" }]
     let imgUrl = "";
     let invUrl = "";
 
-    // Upload image to MinIO
+    // Upload image and invoice to MinIO (Claim Check pattern, extracted to utils/claimCheck.js)
     if (req.files["image"]) {
-      const file = req.files["image"][0];
-      const fileName = `img-${Date.now()}-${file.originalname}`;
-      // send the file from the path where multer saved to MinIO
-      await minioClient.fPutObject(bucket, fileName, file.path);
-      imgUrl = `http://${VM_IP}:9000/${bucket}/${fileName}`;
-      fs.unlinkSync(file.path); // clean local file
+      imgUrl = await uploadAndGetClaimCheck(minioClient, bucket, req.files["image"][0], "img", VM_IP);
     }
-
-    // upload invoice to MinIO
     if (req.files["invoice"]) {
-      const file = req.files["invoice"][0];
-      const fileName = `inv-${Date.now()}-${file.originalname}`;
-      await minioClient.fPutObject(bucket, fileName, file.path);
-      invUrl = `http://${VM_IP}:9000/${bucket}/${fileName}`;
-      fs.unlinkSync(file.path);
+      invUrl = await uploadAndGetClaimCheck(minioClient, bucket, req.files["invoice"][0], "inv", VM_IP);
     }
 
     // save in MongoDB with new Cloud URLs - Claim Check pattern
