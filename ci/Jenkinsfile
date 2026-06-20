@@ -42,6 +42,19 @@ pipeline {
             }
         }
 
+        stage('Guard: Skip if Jenkins-authored commit') {
+            steps {
+                script {
+                    def lastMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
+                    if (lastMsg.contains('[skip-jenkins]')) {
+                        echo "Last commit was authored by Jenkins automation, skipping pipeline."
+                        currentBuild.result = 'SUCCESS'
+                        error("Skipping: Jenkins-authored commit detected")
+                    }
+                }
+            }
+        }
+
         stage('Backend: Unit Tests') {
             when {
                 changeset "backend/**"
@@ -84,8 +97,32 @@ pipeline {
                 changeset "backend/**"
             }
             steps {
-                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
-                sh "docker push ${BACKEND_IMAGE_NAME}:${IMAGE_TAG}"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                usernameVariable: 'DOCKERHUB_USR',
+                                passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh "echo \${DOCKERHUB_PSW} | docker login -u \${DOCKERHUB_USR} --password-stdin"
+                    sh "docker push ${BACKEND_IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Backend: Update Deployment Manifest') {
+            when {
+                changeset "backend/**"
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'github-credentials',
+                                usernameVariable: 'GIT_USR',
+                                passwordVariable: 'GIT_PSW')]) {
+                    sh """
+                        sed -i 's|katsdros/fabric-backend:v[0-9]*|katsdros/fabric-backend:${IMAGE_TAG}|' kubernetes/backend-deployment.yaml
+                        git config user.email 'jenkins@fabric-vm.local'
+                        git config user.name 'Jenkins CI'
+                        git add kubernetes/backend-deployment.yaml
+                        git commit -m "ci: auto-update backend image to ${IMAGE_TAG} [skip-jenkins]" || echo "Nothing to commit"
+                        git push https://\${GIT_USR}:\${GIT_PSW}@github.com/drososkats/fabric-smart-warehouse.git main
+                    """
+                }
             }
         }
 
@@ -105,8 +142,32 @@ pipeline {
                 changeset "frontend/**"
             }
             steps {
-                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
-                sh "docker push ${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                usernameVariable: 'DOCKERHUB_USR',
+                                passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh "echo \${DOCKERHUB_PSW} | docker login -u \${DOCKERHUB_USR} --password-stdin"
+                    sh "docker push ${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Frontend: Update Deployment Manifest') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'github-credentials',
+                                usernameVariable: 'GIT_USR',
+                                passwordVariable: 'GIT_PSW')]) {
+                    sh """
+                        sed -i 's|katsdros/fabric-frontend:v[0-9]*|katsdros/fabric-frontend:${IMAGE_TAG}|' kubernetes/frontend-deployment.yaml
+                        git config user.email 'jenkins@fabric-vm.local'
+                        git config user.name 'Jenkins CI'
+                        git add kubernetes/frontend-deployment.yaml
+                        git commit -m "ci: auto-update frontend image to ${IMAGE_TAG} [skip-jenkins]" || echo "Nothing to commit"
+                        git push https://\${GIT_USR}:\${GIT_PSW}@github.com/drososkats/fabric-smart-warehouse.git main
+                    """
+                }
             }
         }
     }
