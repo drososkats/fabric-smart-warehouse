@@ -34,25 +34,13 @@
   app.set("view engine", "ejs");
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
- // database connection (with retry pattern) 
-const connectWithRetry = async (retries = 3, delayMs = 2000) => {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      await mongoose.connect(MONGO_URI);
-      console.log("✅ Mongodb connected");
-      return;
-    } catch (err) {
-      console.error(`❌ Mongodb connection attempt ${attempt}/${retries} failed:`, err.message);
-      if (attempt < retries) {
-        console.log(`⏳ Retrying in ${delayMs / 1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      } else {
-        console.error("❌ All retry attempts exhausted. Could not connect to Mongodb.");
-      }
-    }
-  }
-};
-connectWithRetry();
+// database connection (with retry pattern, extracted to utils/retry.js)
+const { retryWithDelay } = require('./utils/retry');
+
+retryWithDelay(
+  () => mongoose.connect(MONGO_URI).then(() => console.log("✅ Mongodb connected")),
+  { retries: 3, delayMs: 2000, label: "Mongodb connection" }
+);
 
   // --- file system & storage setup ---
   const dirs = ["uploads/product-images", "uploads/invoices"];
