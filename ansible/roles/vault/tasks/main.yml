@@ -39,6 +39,9 @@
     mongo_uri="{{ vault_mongo_uri }}"
     minio_access_key="{{ vault_minio_access_key }}"
     minio_secret_key="{{ vault_minio_secret_key }}"
+    argocd_admin_password="{{ vault_argocd_admin_password }}"
+    rabbitmq_user="{{ vault_rabbitmq_user }}"
+    rabbitmq_password="{{ vault_rabbitmq_password }}"
   environment:
     VAULT_ADDR: "{{ vault_addr }}"
     VAULT_TOKEN: "{{ vault_root_token }}"
