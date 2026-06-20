@@ -1,0 +1,43 @@
+---
+- name: Enable MicroK8s community addons repository
+  command: microk8s enable community
+  register: community_result
+  changed_when: "'already enabled' not in community_result.stdout"
+  failed_when:
+    - community_result.rc != 0
+    - "'already enabled' not in community_result.stdout"
+
+- name: Enable MicroK8s Knative addon
+  command: microk8s enable knative
+  register: knative_result
+  changed_when: "'already enabled' not in knative_result.stdout"
+  failed_when:
+    - knative_result.rc != 0
+    - "'already enabled' not in knative_result.stdout"
+
+- name: Wait for all pods in knative-serving namespace to become Ready
+  command: >
+    microk8s kubectl wait --for=condition=Ready pods --all
+    -n knative-serving --timeout={{ knative_ready_timeout }}s
+  register: knative_wait_result
+  changed_when: false
+  retries: 3
+  delay: 10
+  until: knative_wait_result.rc == 0
+
+- name: Check if mc binary already exists
+  stat:
+    path: "{{ mc_install_path }}"
+  register: mc_binary
+
+- name: Download MinIO Client (mc) binary
+  get_url:
+    url: "{{ mc_download_url }}"
+    dest: "{{ mc_install_path }}"
+    mode: "0755"
+  when: not mc_binary.stat.exists
+
+- name: Verify mc installation
+  command: mc --version
+  register: mc_version_result
+  changed_when: false

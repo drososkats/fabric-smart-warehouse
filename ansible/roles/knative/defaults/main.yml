@@ -1,0 +1,7 @@
+---
+# MinIO Client (mc) binary
+mc_download_url: "https://dl.min.io/client/mc/release/linux-amd64/mc"
+mc_install_path: "/usr/local/bin/mc"
+
+# How long (seconds) to wait for knative-serving pods to become Ready
+knative_ready_timeout: 180
