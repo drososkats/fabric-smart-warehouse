@@ -28,7 +28,8 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        IMAGE_NAME = 'katsdros/fabric-backend'
+        BACKEND_IMAGE_NAME = 'katsdros/fabric-backend'
+        FRONTEND_IMAGE_NAME = 'katsdros/fabric-frontend'
         IMAGE_TAG = "v${BUILD_NUMBER}"
     }
 
@@ -40,26 +41,11 @@ pipeline {
                 credentialsId: 'github-credentials'
             }
         }
-    
-    stage('Check for Backend Changes') {
-    steps {
-        script {
-            def changes = sh(
-                script: "git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '^backend/' || echo 'CHANGED'",
-                returnStdout: true
-            ).trim()
-            if (changes == '') {
-                echo "No changes in backend/, skipping build."
-                currentBuild.result = 'SUCCESS'
-                error("Skipping: no backend changes detected")
-            } else {
-                echo "Backend changes detected (or history unavailable, building to be safe)."
+
+        stage('Backend: Unit Tests') {
+            when {
+                changeset "backend/**"
             }
-        }
-    }
-}
-    
-    stage('Unit Tests') {
             steps {
                 container('node') {
                     dir('backend') {
@@ -69,7 +55,10 @@ pipeline {
             }
         }
 
-    stage('Security Audit') {
+        stage('Backend: Security Audit') {
+            when {
+                changeset "backend/**"
+            }
             steps {
                 container('node') {
                     dir('backend') {
@@ -78,27 +67,53 @@ pipeline {
                 }
             }
         }
-    
 
-        stage('Build Docker Image') {
+        stage('Backend: Build Docker Image') {
+            when {
+                changeset "backend/**"
+            }
             steps {
                 dir('backend') {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    sh "docker build -t ${BACKEND_IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Backend: Push to Docker Hub') {
+            when {
+                changeset "backend/**"
+            }
             steps {
                 sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
-                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker push ${BACKEND_IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('Frontend: Build Docker Image') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                dir('frontend') {
+                    sh "docker build -t ${FRONTEND_IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Frontend: Push to Docker Hub') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                sh "docker push ${FRONTEND_IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build ${IMAGE_TAG} pushed successfully!"
+            echo "✅ Pipeline completed (build #${BUILD_NUMBER})."
         }
         failure {
             echo "❌ Build failed."
