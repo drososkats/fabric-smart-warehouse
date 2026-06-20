@@ -1,0 +1,4 @@
+kustomize:
+  images:
+  - katsdros/fabric-backend:v20
+  - katsdros/fabric-frontend:v4
