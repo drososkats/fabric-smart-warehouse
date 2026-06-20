@@ -60,8 +60,6 @@ spec:
           value: "9000"
         - name: MINIO_ACCESS_KEY
           value: "admin"
-        - name: MINIO_SECRET_KEY
-          value: "password123"
         
         # bucket name
         - name: MINIO_BUCKET
@@ -72,8 +70,6 @@ spec:
           value: "20.188.60.198"
 
         # database
-        - name: MONGO_URI
-          value: "mongodb+srv://drosos_db_user:noo3aoSHj9cHVKdA@clusterfabric.j48pc5f.mongodb.net/fabricDB?retryWrites=true&w=majority"
         - name: appName
           value: "ClusterFabric"
 ---
