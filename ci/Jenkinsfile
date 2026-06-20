@@ -45,6 +45,8 @@ pipeline {
         stage('Guard: Skip if Jenkins-authored commit') {
             steps {
                 script {
+                    //init the folder as safe before run any git command
+                    sh "git config --global --add safe.directory '${env.WORKSPACE}'"
                     def lastMsg = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
                     if (lastMsg.contains('[skip-jenkins]')) {
                         echo "Last commit was authored by Jenkins automation, skipping pipeline."
