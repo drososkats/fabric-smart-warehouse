@@ -1,0 +1,3 @@
+---
+infracost_install_script_url: "https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh"
+infracost_install_path: "/usr/local/bin/infracost"

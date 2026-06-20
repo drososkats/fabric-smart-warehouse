@@ -1,0 +1,16 @@
+---
+- name: Check if infracost binary already exists
+  stat:
+    path: "{{ infracost_install_path }}"
+  register: infracost_binary
+
+- name: Download and install Infracost CLI
+  shell: "curl -fsSL {{ infracost_install_script_url }} | sh"
+  args:
+    creates: "{{ infracost_install_path }}"
+  when: not infracost_binary.stat.exists
+
+- name: Verify Infracost installation
+  command: infracost --version
+  register: infracost_version_result
+  changed_when: false

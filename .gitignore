@@ -35,3 +35,5 @@ Thumbs.db
 
 # ── secrets ─────────────────────────
 ansible/secrets.yml
+
+infrastructure/.infracost/
