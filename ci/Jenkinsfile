@@ -41,6 +41,24 @@ pipeline {
             }
         }
     
+    stage('Check for Backend Changes') {
+    steps {
+        script {
+            def changes = sh(
+                script: "git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '^backend/' || echo 'CHANGED'",
+                returnStdout: true
+            ).trim()
+            if (changes == '') {
+                echo "No changes in backend/, skipping build."
+                currentBuild.result = 'SUCCESS'
+                error("Skipping: no backend changes detected")
+            } else {
+                echo "Backend changes detected (or history unavailable, building to be safe)."
+            }
+        }
+    }
+}
+    
     stage('Unit Tests') {
             steps {
                 container('node') {
