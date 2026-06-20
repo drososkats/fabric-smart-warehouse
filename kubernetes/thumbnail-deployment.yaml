@@ -1,0 +1,22 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: thumbnail-function
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: katsdros/thumbnail-function:v11
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MINIO_ENDPOINT
+              value: "minio-service"
+            - name: MINIO_PORT
+              value: "9000"
+            - name: MINIO_ACCESS_KEY
+              value: "admin"
+            - name: MINIO_SECRET_KEY
+              value: "password123"
+      containerConcurrency: 10
