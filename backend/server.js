@@ -214,7 +214,7 @@ const startServer = async () => {
 
     // start server
     app.listen(PORT, () => {
-      console.log(`🚀 Fabric ERP is Cloud-Active on port ${PORT}`);
+      console.log(`🚀 Fabric ERP is Cloud-Active GitOps-Demo on port ${PORT}`);
       
    // RabbitMQ message when start the server
       if (rabbitChannel) {
